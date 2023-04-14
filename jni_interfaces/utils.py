@@ -145,6 +145,7 @@ def get_prepared_jni_onload_state(proj, jvm_ptr, jenv_ptr, dex=None):
 
 
 def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=None, global_refs=None):
+    import time; start = time.time()
     func_params, updates = get_jni_function_params(proj, func_addr, jenv_ptr)
     state = proj.factory.call_state(func_addr, *func_params)
     state.globals['func_ptr'] = func_addr
@@ -168,12 +169,14 @@ def analyze_jni_function(func_addr, proj, jvm_ptr, jenv_ptr, dex=None, returns=N
         invokees = Record.RECORDS.get(func_addr).get_invokees()
         if invokees is not None:
             returns.update({func_addr: invokees})
-
+    duration = time.time() - start
+    logger.warning(f'Analysis spent: {duration}s.')
 
 def get_jni_function_params(proj, func_addr, jenv_ptr):
     record = Record.RECORDS.get(func_addr)
     if record is None:
         raise RecordNotFoundError('Relevant JNI function record not found!')
+    logger.warning(f'Current Function: {record}.')
     # for user's JNI function, the first 2 parameters are hidden from Java side
     # and the first one will always be the JNIEnv pointer.
     params = [jenv_ptr]
